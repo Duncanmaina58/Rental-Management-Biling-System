@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RMBS — Rental Management & Billing System</title>
+    <script>
+      // Runs before React mounts to avoid a flash of the wrong theme.
+      // Mirrors the logic in src/store/themeStore.ts — keep these in sync.
+      (function () {
+        try {
+          var stored = localStorage.getItem("rmbs-theme");
+          var theme = stored ? JSON.parse(stored).state.theme : null;
+          if (!theme) {
+            theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

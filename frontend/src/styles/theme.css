@@ -1,0 +1,123 @@
+/* ============================================================
+   Theme tokens — Dun-Star RMBS
+   Two-accent system: violet is the interactive/brand color,
+   emerald is reserved exclusively for positive financial meaning
+   (paid, collected, profit). Red/amber carry the rest of the
+   financial status vocabulary. This split means color encodes
+   information rather than just decorating it.
+   ============================================================ */
+
+:root {
+  /* Canvas & surfaces — warm off-white, not clinical slate-50 */
+  --canvas: #F7F7FA;
+  --surface: #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --surface-sunken: #F0F1F5;
+  --overlay: rgb(15 15 20 / 0.45);
+
+  /* Borders */
+  --border: #E6E7EC;
+  --border-strong: #D4D6DE;
+
+  /* Text */
+  --text-primary: #15151A;
+  --text-secondary: #5B5D6B;
+  --text-tertiary: #8C8E9C;
+  --text-on-accent: #FFFFFF;
+
+  /* Brand / interactive — violet. Used for: primary buttons, active nav,
+     links, focus rings, selected states. NOT used for "paid/success". */
+  --brand-50: #F2F0FF;
+  --brand-100: #E4E0FF;
+  --brand-400: #8B7CFB;
+  --brand-500: #6D5EF8;
+  --brand-600: #5A49E8;
+  --brand-700: #4936C4;
+
+  /* Financial-positive — emerald. Used ONLY for: paid, collected,
+     active/healthy, approved, profit. Never used as a generic accent. */
+  --positive-50: #ECFDF5;
+  --positive-500: #10B981;
+  --positive-600: #059669;
+  --positive-700: #047857;
+
+  /* Financial-attention — amber. Pending, partial, needs review. */
+  --warning-50: #FFFBEB;
+  --warning-500: #F59E0B;
+  --warning-600: #D97706;
+
+  /* Financial-negative — red. Overdue, failed, blocked, terminated. */
+  --danger-50: #FEF2F2;
+  --danger-500: #EF4444;
+  --danger-600: #DC2626;
+  --danger-700: #B91C1C;
+
+  /* Neutral chip backgrounds (draft/inactive states) */
+  --neutral-chip-bg: #EEEFF3;
+  --neutral-chip-text: #5B5D6B;
+
+  --shadow-sm: 0 1px 2px 0 rgb(15 15 20 / 0.04);
+  --shadow-md: 0 2px 8px -2px rgb(15 15 20 / 0.06), 0 4px 16px -4px rgb(15 15 20 / 0.06);
+  --shadow-lg: 0 8px 24px -4px rgb(15 15 20 / 0.12), 0 4px 8px -4px rgb(15 15 20 / 0.06);
+
+  --sidebar-bg: #15151A;
+  --sidebar-text: #A3A4B5;
+  --sidebar-text-active: #FFFFFF;
+  --sidebar-hover: rgb(255 255 255 / 0.06);
+  --sidebar-active-bg: rgb(109 94 248 / 0.18);
+  --sidebar-border: rgb(255 255 255 / 0.07);
+}
+
+/* Dark mode — true near-black, not navy-tinted (a deliberate departure
+   from the generic "dark mode = dark blue" AI dashboard default).
+   Accent lightness is boosted slightly for correct contrast on dark. */
+[data-theme="dark"] {
+  --canvas: #0C0D10;
+  --surface: #15161B;
+  --surface-raised: #1C1D24;
+  --surface-sunken: #0C0D10;
+  --overlay: rgb(0 0 0 / 0.6);
+
+  --border: #26272F;
+  --border-strong: #34353F;
+
+  --text-primary: #F4F4F6;
+  --text-secondary: #A3A4B5;
+  --text-tertiary: #6E6F7E;
+  --text-on-accent: #FFFFFF;
+
+  --brand-50: #1E1A3D;
+  --brand-100: #2A2454;
+  --brand-400: #9C8FFA;
+  --brand-500: #8979FA;
+  --brand-600: #7B6BF6;
+  --brand-700: #6D5EF8;
+
+  --positive-50: #0C2419;
+  --positive-500: #34D399;
+  --positive-600: #10B981;
+  --positive-700: #059669;
+
+  --warning-50: #2A1E0A;
+  --warning-500: #FBBF24;
+  --warning-600: #F59E0B;
+
+  --danger-50: #2A1414;
+  --danger-500: #F87171;
+  --danger-600: #EF4444;
+  --danger-700: #DC2626;
+
+  --neutral-chip-bg: #23242C;
+  --neutral-chip-text: #A3A4B5;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 2px 8px -2px rgb(0 0 0 / 0.4), 0 4px 16px -4px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 8px 24px -4px rgb(0 0 0 / 0.5), 0 4px 8px -4px rgb(0 0 0 / 0.3);
+
+  --sidebar-bg: #0C0D10;
+  --sidebar-text: #8C8E9C;
+  --sidebar-text-active: #FFFFFF;
+  --sidebar-hover: rgb(255 255 255 / 0.05);
+  --sidebar-active-bg: rgb(137 121 250 / 0.16);
+  --sidebar-border: rgb(255 255 255 / 0.06);
+}

@@ -1,0 +1,142 @@
+// Enums mirroring the spec's domain classifications.
+// Kept as string enums (not numeric) so API payloads and DB values stay human-readable.
+
+export enum PropertyType {
+  RESIDENTIAL = "RESIDENTIAL",
+  COMMERCIAL = "COMMERCIAL",
+  MIXED_USE = "MIXED_USE",
+}
+
+export enum UnitType {
+  // Residential
+  BEDSITTER = "BEDSITTER",
+  ONE_BEDROOM = "ONE_BEDROOM",
+  TWO_BEDROOM = "TWO_BEDROOM",
+  THREE_BEDROOM = "THREE_BEDROOM",
+  MAISONETTE = "MAISONETTE",
+  // Commercial
+  SHOP = "SHOP",
+  OFFICE = "OFFICE",
+  WAREHOUSE = "WAREHOUSE",
+  SHOWROOM = "SHOWROOM",
+}
+
+export enum UnitClassification {
+  RESIDENTIAL = "RESIDENTIAL",
+  COMMERCIAL = "COMMERCIAL",
+}
+
+export enum UnitStatus {
+  VACANT = "VACANT",
+  OCCUPIED = "OCCUPIED",
+  RESERVED = "RESERVED",
+  UNDER_MAINTENANCE = "UNDER_MAINTENANCE",
+  HELD = "HELD", // legal dispute / on hold
+}
+
+export enum LeaseStatus {
+  DRAFT = "DRAFT",
+  ACTIVE = "ACTIVE",
+  EXPIRING_SOON = "EXPIRING_SOON",
+  RENEWED = "RENEWED",
+  TERMINATED = "TERMINATED",
+  EXPIRED = "EXPIRED",
+}
+
+export enum RentBasis {
+  FLAT_MONTHLY = "FLAT_MONTHLY",
+  PER_SQFT = "PER_SQFT",
+  PER_SQM = "PER_SQM",
+  PERCENT_OF_TURNOVER = "PERCENT_OF_TURNOVER",
+}
+
+export enum BillingCycle {
+  MONTHLY = "MONTHLY",
+  QUARTERLY = "QUARTERLY",
+  ANNUALLY = "ANNUALLY",
+}
+
+export enum InvoiceStatus {
+  DRAFT = "DRAFT",
+  ISSUED = "ISSUED",
+  PARTIALLY_PAID = "PARTIALLY_PAID",
+  PAID = "PAID",
+  OVERDUE = "OVERDUE",
+  CANCELLED = "CANCELLED",
+  CREDITED = "CREDITED",
+}
+
+export enum ChargeType {
+  RENT = "RENT",
+  UTILITY_WATER = "UTILITY_WATER",
+  UTILITY_ELECTRICITY = "UTILITY_ELECTRICITY",
+  CAM_SERVICE_CHARGE = "CAM_SERVICE_CHARGE",
+  PARKING = "PARKING",
+  DEPOSIT = "DEPOSIT",
+  LATE_FEE = "LATE_FEE",
+  ONE_OFF = "ONE_OFF",
+  VAT = "VAT",
+}
+
+export enum PaymentMethod {
+  CASH = "CASH",
+  BANK_TRANSFER = "BANK_TRANSFER",
+  MPESA = "MPESA",
+  CARD = "CARD",
+  CHEQUE = "CHEQUE",
+}
+
+export enum PaymentStatus {
+  PENDING = "PENDING",
+  CONFIRMED = "CONFIRMED",
+  FAILED = "FAILED",
+  REVERSED = "REVERSED",
+}
+
+export enum OwnerResidency {
+  RESIDENT = "RESIDENT",
+  NON_RESIDENT = "NON_RESIDENT",
+}
+
+export enum FeeBasis {
+  FLAT_FEE = "FLAT_FEE",
+  PERCENT_OF_BILLED = "PERCENT_OF_BILLED",
+  PERCENT_OF_COLLECTED = "PERCENT_OF_COLLECTED",
+}
+
+export enum TrustTransactionType {
+  DEPOSIT_RECEIVED = "DEPOSIT_RECEIVED",
+  DEPOSIT_REFUNDED = "DEPOSIT_REFUNDED",
+  DEPOSIT_DEDUCTED = "DEPOSIT_DEDUCTED",
+  RENT_RECEIVED = "RENT_RECEIVED",
+  MANAGEMENT_FEE_EARNED = "MANAGEMENT_FEE_EARNED",
+  OWNER_DISBURSEMENT = "OWNER_DISBURSEMENT",
+  WITHHOLDING_TAX_REMITTED = "WITHHOLDING_TAX_REMITTED",
+  EXPENSE_PAID = "EXPENSE_PAID",
+  REVERSAL = "REVERSAL",
+}
+
+export enum DisbursementStatus {
+  CALCULATED = "CALCULATED",
+  PENDING_APPROVAL = "PENDING_APPROVAL",
+  APPROVED = "APPROVED",
+  PAID_OUT = "PAID_OUT",
+  HELD = "HELD",
+}
+
+export enum MaintenanceStatus {
+  OPEN = "OPEN",
+  ASSIGNED = "ASSIGNED",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+  CLOSED = "CLOSED",
+}
+
+export enum UserRole {
+  ADMIN = "ADMIN",
+  FINANCE = "FINANCE",
+  PROPERTY_MANAGER = "PROPERTY_MANAGER",
+  CARETAKER = "CARETAKER",
+  OWNER = "OWNER",
+  TENANT = "TENANT",
+}

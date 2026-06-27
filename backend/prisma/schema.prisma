@@ -1,0 +1,576 @@
+// Prisma schema for Rental Management & Billing System (Kenya)
+// Mirrors the module structure from the functional spec:
+// Module 1 (Company/Owner/Property), 2 (Unit/Lease), 3 (Tenant),
+// 4 (Billing), 5 (Payments), 6 (Trust Accounting), 7 (Disbursements),
+// 8 (Tax Compliance), 9 (Maintenance), 12 (Users/Roles)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===================== ENUMS =====================
+
+enum PropertyType {
+  RESIDENTIAL
+  COMMERCIAL
+  MIXED_USE
+}
+
+enum UnitType {
+  BEDSITTER
+  ONE_BEDROOM
+  TWO_BEDROOM
+  THREE_BEDROOM
+  MAISONETTE
+  SHOP
+  OFFICE
+  WAREHOUSE
+  SHOWROOM
+}
+
+enum UnitClassification {
+  RESIDENTIAL
+  COMMERCIAL
+}
+
+enum UnitStatus {
+  VACANT
+  OCCUPIED
+  RESERVED
+  UNDER_MAINTENANCE
+  HELD
+}
+
+enum LeaseStatus {
+  DRAFT
+  ACTIVE
+  EXPIRING_SOON
+  RENEWED
+  TERMINATED
+  EXPIRED
+}
+
+enum RentBasis {
+  FLAT_MONTHLY
+  PER_SQFT
+  PER_SQM
+  PERCENT_OF_TURNOVER
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  ANNUALLY
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+  CREDITED
+}
+
+enum ChargeType {
+  RENT
+  UTILITY_WATER
+  UTILITY_ELECTRICITY
+  CAM_SERVICE_CHARGE
+  PARKING
+  DEPOSIT
+  LATE_FEE
+  ONE_OFF
+  VAT
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  MPESA
+  CARD
+  CHEQUE
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  REVERSED
+}
+
+enum OwnerResidency {
+  RESIDENT
+  NON_RESIDENT
+}
+
+enum FeeBasis {
+  FLAT_FEE
+  PERCENT_OF_BILLED
+  PERCENT_OF_COLLECTED
+}
+
+enum TrustTransactionType {
+  DEPOSIT_RECEIVED
+  DEPOSIT_REFUNDED
+  DEPOSIT_DEDUCTED
+  RENT_RECEIVED
+  MANAGEMENT_FEE_EARNED
+  OWNER_DISBURSEMENT
+  WITHHOLDING_TAX_REMITTED
+  EXPENSE_PAID
+  REVERSAL
+}
+
+enum DisbursementStatus {
+  CALCULATED
+  PENDING_APPROVAL
+  APPROVED
+  PAID_OUT
+  HELD
+}
+
+enum MaintenanceStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CLOSED
+}
+
+enum UserRole {
+  ADMIN
+  FINANCE
+  PROPERTY_MANAGER
+  CARETAKER
+  OWNER
+  TENANT
+}
+
+// ===================== MODULE 1: COMPANY, OWNER, PROPERTY =====================
+
+model Company {
+  id              String   @id @default(uuid())
+  name            String
+  kraPin          String   @map("kra_pin")
+  address         String
+  logoUrl         String?  @map("logo_url")
+  defaultCurrency String   @default("KES") @map("default_currency")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  owners     Owner[]
+  properties Property[]
+  users      User[]
+  tenants    Tenant[]
+
+  @@map("companies")
+}
+
+model Owner {
+  id                String         @id @default(uuid())
+  companyId         String         @map("company_id")
+  fullName          String         @map("full_name")
+  idOrPassport      String         @map("id_or_passport")
+  kraPin            String?        @map("kra_pin")
+  phone             String
+  email             String?
+  residency         OwnerResidency @default(RESIDENT)
+  bankAccountName   String?        @map("bank_account_name")
+  bankAccountNumber String?        @map("bank_account_number")
+  bankName          String?        @map("bank_name")
+  feeBasis          FeeBasis       @default(PERCENT_OF_COLLECTED) @map("fee_basis")
+  feeValue          Decimal        @default(10) @db.Decimal(10, 2) @map("fee_value")
+  isVatRegistered   Boolean        @default(false) @map("is_vat_registered")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  company         Company          @relation(fields: [companyId], references: [id])
+  propertyLinks   PropertyOwner[]
+  trustTxns       TrustTransaction[]
+  disbursements   Disbursement[]
+  mriRecords      MriRecord[]
+  users           User[]
+
+  @@map("owners")
+}
+
+model Property {
+  id           String       @id @default(uuid())
+  companyId    String       @map("company_id")
+  name         String
+  address      String
+  propertyType PropertyType @map("property_type")
+  // Common Area Maintenance rate, KES per sqm per billing cycle. Only
+  // meaningful for COMMERCIAL/MIXED_USE properties — applied to a unit's
+  // CAM charge as camRatePerSqm * unit.sizeSqm at invoice generation time.
+  // Null means "no CAM charge applies to this property."
+  camRatePerSqm Decimal?    @db.Decimal(10, 2) @map("cam_rate_per_sqm")
+  latitude     Decimal?     @db.Decimal(10, 6)
+  longitude    Decimal?     @db.Decimal(10, 6)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  company    Company         @relation(fields: [companyId], references: [id])
+  ownerLinks PropertyOwner[]
+  units      Unit[]
+  mriRecords MriRecord[]
+
+  @@map("properties")
+}
+
+// Many-to-many join supporting co-owned properties (ownership % per owner)
+model PropertyOwner {
+  id                String   @id @default(uuid())
+  propertyId        String   @map("property_id")
+  ownerId           String   @map("owner_id")
+  ownershipPercent  Decimal  @default(100) @db.Decimal(5, 2) @map("ownership_percent")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id])
+  owner    Owner    @relation(fields: [ownerId], references: [id])
+
+  @@unique([propertyId, ownerId])
+  @@map("property_owners")
+}
+
+// ===================== MODULE 2: UNIT & LEASE =====================
+
+model Unit {
+  id                     String              @id @default(uuid())
+  propertyId             String              @map("property_id")
+  unitNumber             String              @map("unit_number")
+  floor                  String?
+  sizeSqm                Decimal?            @db.Decimal(10, 2) @map("size_sqm")
+  unitType               UnitType            @map("unit_type")
+  classification         UnitClassification
+  status                 UnitStatus          @default(VACANT)
+  bedrooms               Int?
+  hasParking             Boolean             @default(false) @map("has_parking")
+  meterNumberWater       String?             @map("meter_number_water")
+  meterNumberElectricity String?             @map("meter_number_electricity")
+  createdAt              DateTime            @default(now()) @map("created_at")
+  updatedAt              DateTime            @updatedAt @map("updated_at")
+
+  property             Property              @relation(fields: [propertyId], references: [id])
+  leases               Lease[]
+  maintenanceRequests  MaintenanceRequest[]
+
+  @@unique([propertyId, unitNumber])
+  @@map("units")
+}
+
+model Lease {
+  id                       String      @id @default(uuid())
+  unitId                   String      @map("unit_id")
+  primaryTenantId          String      @map("primary_tenant_id")
+  status                   LeaseStatus @default(DRAFT)
+  startDate                DateTime    @map("start_date")
+  endDate                  DateTime?   @map("end_date")
+  rentBasis                RentBasis   @default(FLAT_MONTHLY) @map("rent_basis")
+  rentAmount               Decimal     @db.Decimal(12, 2) @map("rent_amount")
+  billingCycle             BillingCycle @default(MONTHLY) @map("billing_cycle")
+  depositAmount            Decimal     @default(0) @db.Decimal(12, 2) @map("deposit_amount")
+  escalationPercent        Decimal?    @db.Decimal(5, 2) @map("escalation_percent")
+  escalationFrequencyMonths Int?       @map("escalation_frequency_months")
+  noticePeriodDays         Int         @default(30) @map("notice_period_days")
+  createdAt                DateTime    @default(now()) @map("created_at")
+  updatedAt                DateTime    @updatedAt @map("updated_at")
+
+  unit          Unit            @relation(fields: [unitId], references: [id])
+  primaryTenant Tenant          @relation("PrimaryTenantLeases", fields: [primaryTenantId], references: [id])
+  tenantLinks   LeaseTenant[]
+  invoices      Invoice[]
+  payments      Payment[]
+  trustTxns     TrustTransaction[]
+
+  @@map("leases")
+}
+
+// Supports co-tenancy: multiple tenants on one lease with liability split
+model LeaseTenant {
+  id                    String   @id @default(uuid())
+  leaseId               String   @map("lease_id")
+  tenantId              String   @map("tenant_id")
+  isPrimary             Boolean  @default(false) @map("is_primary")
+  liabilitySharePercent Decimal? @db.Decimal(5, 2) @map("liability_share_percent")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  lease  Lease  @relation(fields: [leaseId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([leaseId, tenantId])
+  @@map("lease_tenants")
+}
+
+// ===================== MODULE 3: TENANT =====================
+
+model Tenant {
+  id                         String   @id @default(uuid())
+  companyId                  String   @map("company_id")
+  fullName                   String   @map("full_name")
+  isBusinessTenant           Boolean  @default(false) @map("is_business_tenant")
+  idOrPassport                String?  @map("id_or_passport")
+  kraPin                      String?  @map("kra_pin")
+  businessRegistrationNumber  String?  @map("business_registration_number")
+  phone                       String
+  email                       String?
+  emergencyContactName        String?  @map("emergency_contact_name")
+  emergencyContactPhone       String?  @map("emergency_contact_phone")
+  isBlacklisted                Boolean  @default(false) @map("is_blacklisted")
+  createdAt                    DateTime @default(now()) @map("created_at")
+  updatedAt                    DateTime @updatedAt @map("updated_at")
+
+  company                Company              @relation(fields: [companyId], references: [id])
+  primaryLeases        Lease[]              @relation("PrimaryTenantLeases")
+  leaseLinks            LeaseTenant[]
+  payments              Payment[]
+  trustTxns              TrustTransaction[]
+  maintenanceRequests    MaintenanceRequest[]
+  user                   User?
+
+  @@map("tenants")
+}
+
+// ===================== MODULE 4: BILLING =====================
+
+model Invoice {
+  id            String        @id @default(uuid())
+  leaseId       String        @map("lease_id")
+  invoiceNumber String        @unique @map("invoice_number")
+  status        InvoiceStatus @default(DRAFT)
+  issueDate     DateTime      @map("issue_date")
+  dueDate       DateTime      @map("due_date")
+  periodStart   DateTime      @map("period_start")
+  periodEnd     DateTime      @map("period_end")
+  subtotal      Decimal       @db.Decimal(12, 2)
+  vatAmount     Decimal       @default(0) @db.Decimal(12, 2) @map("vat_amount")
+  totalAmount   Decimal       @db.Decimal(12, 2) @map("total_amount")
+  amountPaid    Decimal       @default(0) @db.Decimal(12, 2) @map("amount_paid")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  lease       Lease              @relation(fields: [leaseId], references: [id])
+  lineItems   InvoiceLineItem[]
+  allocations PaymentAllocation[]
+
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id          String     @id @default(uuid())
+  invoiceId   String     @map("invoice_id")
+  chargeType  ChargeType @map("charge_type")
+  description String
+  quantity    Decimal    @default(1) @db.Decimal(10, 2)
+  unitPrice   Decimal    @db.Decimal(12, 2) @map("unit_price")
+  amount      Decimal    @db.Decimal(12, 2)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@map("invoice_line_items")
+}
+
+// ===================== MODULE 5: PAYMENTS =====================
+
+model Payment {
+  id               String        @id @default(uuid())
+  leaseId          String        @map("lease_id")
+  tenantId         String        @map("tenant_id")
+  method           PaymentMethod
+  status           PaymentStatus @default(PENDING)
+  amount           Decimal       @db.Decimal(12, 2)
+  reference        String?
+  paidAt           DateTime      @map("paid_at")
+  recordedByUserId String        @map("recorded_by_user_id")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  lease       Lease               @relation(fields: [leaseId], references: [id])
+  tenant      Tenant              @relation(fields: [tenantId], references: [id])
+  recordedBy  User                @relation("RecordedPayments", fields: [recordedByUserId], references: [id])
+  allocations PaymentAllocation[]
+  trustTxns   TrustTransaction[]
+
+  @@map("payments")
+}
+
+model PaymentAllocation {
+  id              String   @id @default(uuid())
+  paymentId       String   @map("payment_id")
+  invoiceId       String   @map("invoice_id")
+  amountAllocated Decimal  @db.Decimal(12, 2) @map("amount_allocated")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@map("payment_allocations")
+}
+
+// ===================== MODULE 6: TRUST ACCOUNTING =====================
+// Append-only ledger. Corrections via reversal entries only — see spec 6.3.
+
+model TrustTransaction {
+  id                      String               @id @default(uuid())
+  type                    TrustTransactionType
+  amount                  Decimal              @db.Decimal(12, 2) // positive = inflow, negative = outflow
+  ownerId                 String?              @map("owner_id")
+  tenantId                String?              @map("tenant_id")
+  leaseId                 String?              @map("lease_id")
+  relatedPaymentId        String?              @map("related_payment_id")
+  relatedDisbursementId   String?              @map("related_disbursement_id")
+  description             String
+  postedByUserId          String               @map("posted_by_user_id")
+  isReversal              Boolean              @default(false) @map("is_reversal")
+  reversesTransactionId   String?              @map("reverses_transaction_id")
+  createdAt               DateTime             @default(now()) @map("created_at")
+
+  owner             Owner?         @relation(fields: [ownerId], references: [id])
+  tenant            Tenant?        @relation(fields: [tenantId], references: [id])
+  lease             Lease?         @relation(fields: [leaseId], references: [id])
+  relatedPayment    Payment?       @relation(fields: [relatedPaymentId], references: [id])
+  relatedDisbursement Disbursement? @relation(fields: [relatedDisbursementId], references: [id])
+  postedBy          User           @relation("PostedTrustTxns", fields: [postedByUserId], references: [id])
+
+  @@map("trust_transactions")
+}
+
+// ===================== MODULE 7: OWNER DISBURSEMENTS =====================
+
+model Disbursement {
+  id                       String              @id @default(uuid())
+  ownerId                  String              @map("owner_id")
+  periodStart              DateTime            @map("period_start")
+  periodEnd                DateTime            @map("period_end")
+  grossRentCollected       Decimal             @db.Decimal(12, 2) @map("gross_rent_collected")
+  managementFee            Decimal             @db.Decimal(12, 2) @map("management_fee")
+  expensesDeducted         Decimal             @default(0) @db.Decimal(12, 2) @map("expenses_deducted")
+  withholdingTaxDeducted   Decimal             @default(0) @db.Decimal(12, 2) @map("withholding_tax_deducted")
+  netPayable               Decimal             @db.Decimal(12, 2) @map("net_payable")
+  status                   DisbursementStatus  @default(CALCULATED)
+  approvedByUserId         String?             @map("approved_by_user_id")
+  paidOutAt                DateTime?           @map("paid_out_at")
+  payoutReference          String?             @map("payout_reference")
+  createdAt                DateTime            @default(now()) @map("created_at")
+  updatedAt                DateTime            @updatedAt @map("updated_at")
+
+  owner       Owner              @relation(fields: [ownerId], references: [id])
+  approvedBy  User?              @relation("ApprovedDisbursements", fields: [approvedByUserId], references: [id])
+  trustTxns   TrustTransaction[]
+
+  @@map("disbursements")
+}
+
+// ===================== MODULE 8: TAX COMPLIANCE =====================
+
+model TaxParameter {
+  id            String    @id @default(uuid())
+  key           String    @unique
+  value         Decimal   @db.Decimal(14, 4)
+  effectiveFrom DateTime  @map("effective_from")
+  effectiveTo   DateTime? @map("effective_to")
+  description   String
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@map("tax_parameters")
+}
+
+model MriRecord {
+  id                  String    @id @default(uuid())
+  ownerId             String    @map("owner_id")
+  propertyId          String    @map("property_id")
+  periodMonth         String    @map("period_month") // "2026-06"
+  grossRentReceived   Decimal   @db.Decimal(12, 2) @map("gross_rent_received")
+  taxRateApplied      Decimal   @db.Decimal(5, 2) @map("tax_rate_applied")
+  taxDue              Decimal   @db.Decimal(12, 2) @map("tax_due")
+  isNilReturn         Boolean   @default(false) @map("is_nil_return")
+  filedAt             DateTime? @map("filed_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  owner    Owner    @relation(fields: [ownerId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
+
+  @@unique([ownerId, propertyId, periodMonth])
+  @@map("mri_records")
+}
+
+// ===================== MODULE 9: MAINTENANCE =====================
+
+model MaintenanceRequest {
+  id                 String             @id @default(uuid())
+  unitId             String             @map("unit_id")
+  raisedByTenantId   String?            @map("raised_by_tenant_id")
+  raisedByUserId     String?            @map("raised_by_user_id")
+  status             MaintenanceStatus  @default(OPEN)
+  title              String
+  description        String
+  photoUrls          String[]           @map("photo_urls")
+  assignedToUserId   String?            @map("assigned_to_user_id")
+  assignedVendorName String?            @map("assigned_vendor_name")
+  cost               Decimal?           @db.Decimal(12, 2)
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  unit           Unit    @relation(fields: [unitId], references: [id])
+  raisedByTenant Tenant? @relation(fields: [raisedByTenantId], references: [id])
+  raisedByUser   User?   @relation("RaisedMaintenance", fields: [raisedByUserId], references: [id])
+  assignedTo     User?   @relation("AssignedMaintenance", fields: [assignedToUserId], references: [id])
+
+  @@map("maintenance_requests")
+}
+
+// ===================== MODULE 12: USERS & ACCESS =====================
+
+model User {
+  id           String   @id @default(uuid())
+  companyId    String   @map("company_id")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  fullName     String   @map("full_name")
+  role         UserRole
+  isActive     Boolean  @default(true) @map("is_active")
+  ownerId      String?  @unique @map("owner_id")
+  tenantId     String?  @unique @map("tenant_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  company                Company              @relation(fields: [companyId], references: [id])
+  owner                  Owner?               @relation(fields: [ownerId], references: [id])
+  tenant                 Tenant?              @relation(fields: [tenantId], references: [id])
+  recordedPayments       Payment[]            @relation("RecordedPayments")
+  postedTrustTxns        TrustTransaction[]   @relation("PostedTrustTxns")
+  approvedDisbursements  Disbursement[]       @relation("ApprovedDisbursements")
+  raisedMaintenance      MaintenanceRequest[] @relation("RaisedMaintenance")
+  assignedMaintenance    MaintenanceRequest[] @relation("AssignedMaintenance")
+  auditLogs              AuditLog[]
+
+  @@map("users")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  action     String   // e.g. "CREATE_INVOICE", "APPROVE_DISBURSEMENT"
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  beforeData Json?    @map("before_data")
+  afterData  Json?    @map("after_data")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}

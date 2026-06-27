@@ -1,0 +1,25 @@
+{
+  "name": "rmbs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rental Management & Billing System - Kenya",
+  "workspaces": [
+    "backend",
+    "frontend",
+    "shared"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build:shared": "npm run build --workspace=shared",
+    "build:backend": "npm run build --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build": "npm run build:shared && npm run build:backend && npm run build:frontend",
+    "db:migrate": "npm run db:migrate --workspace=backend",
+    "db:studio": "npm run db:studio --workspace=backend",
+    "db:seed": "npm run db:seed --workspace=backend"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
