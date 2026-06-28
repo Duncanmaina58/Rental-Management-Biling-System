@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+      "build": "npm run build:shared && vite build",
+  "build:shared": "cd ../shared && npm install && npm run build",
     "lint": "eslint . --ext ts,tsx",
     "preview": "vite preview"
   },
