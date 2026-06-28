@@ -10,7 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@rmbs/shared": "*",
+    "@rmbs/shared": "file:../shared",
+    
     "@tanstack/react-query": "^5.51.23",
     "@hookform/resolvers": "^3.9.0",
     "axios": "^1.7.4",
