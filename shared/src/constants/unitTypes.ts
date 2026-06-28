@@ -1,4 +1,4 @@
-import { UnitType, UnitClassification } from "../types/enums";
+import { UnitType, UnitClassification } from "../types/enums.js";
 
 // Drives the frontend's unit-type dropdown filtering (residential vs.
 // commercial unit types shouldn't mix) and provides a single source of

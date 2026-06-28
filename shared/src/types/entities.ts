@@ -3,7 +3,7 @@ import {
   LeaseStatus, RentBasis, BillingCycle, InvoiceStatus, ChargeType,
   PaymentMethod, PaymentStatus, OwnerResidency, FeeBasis,
   TrustTransactionType, DisbursementStatus, MaintenanceStatus, UserRole,
-} from "./enums";
+} from "./enums.js";
 
 // Base fields every entity carries.
 export interface BaseEntity {
